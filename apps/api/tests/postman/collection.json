@@ -1,0 +1,2786 @@
+{
+  "info": {
+    "name": "Procurement Intelligence API",
+    "description": "Health, Items CRUD lifecycle and validation tests. Self-contained: creates and deletes its own data.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Authentication",
+      "item": [
+        {
+          "name": "Signup (201, sets session cookie)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now();",
+                  "pm.environment.set('authEmailA', 'newman-a-' + stamp + '@example.com');",
+                  "pm.environment.set('authEmailB', 'newman-b-' + stamp + '@example.com');",
+                  "pm.environment.set('authPassword', 'Newman-Pass1');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "",
+                  "pm.test('Response has user session details', function () {",
+                  "  const u = pm.response.json().data.user;",
+                  "  pm.expect(u).to.include.all.keys('id', 'email', 'organizationName', 'tenantId');",
+                  "  pm.expect(u.tenantId).to.match(/^[a-f0-9]{24}$/);",
+                  "});",
+                  "",
+                  "",
+                  "pm.test('Session cookie is HttpOnly and not exposed in the body', function () {",
+                  "  const sc = [].concat(pm.response.headers.get('Set-Cookie') || []).join(';');",
+                  "  pm.expect(sc).to.include('accessToken=');",
+                  "  pm.expect(sc.toLowerCase()).to.include('httponly');",
+                  "  pm.expect(JSON.stringify(pm.response.json())).to.not.include('passwordHash');",
+                  "});",
+                  "",
+                  "pm.test('User belongs to their own tenant', function () {",
+                  "  const u = pm.response.json().data.user;",
+                  "  pm.expect(u.email).to.equal(pm.environment.get('authEmailA'));",
+                  "  pm.expect(u.organizationName).to.equal('Newman Org A');",
+                  "  pm.environment.set('tenantAId', u.tenantId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{authEmailA}}\",\n  \"password\": \"{{authPassword}}\",\n  \"organizationName\": \"Newman Org A\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "signup"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Signup with an existing email (409 EMAIL_TAKEN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Envelope: success=false with error.code EMAIL_TAKEN', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'EMAIL_TAKEN');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{authEmailA}}\",\n  \"password\": \"{{authPassword}}\",\n  \"organizationName\": \"Someone Else\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "signup"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Signup with invalid fields (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code VALIDATION_ERROR', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'VALIDATION_ERROR');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});",
+                  "",
+                  "pm.test('details name the offending fields', function () {",
+                  "  const paths = pm.response.json().error.details.map(function (d) { return d.path; });",
+                  "  pm.expect(paths).to.include.members(['email', 'password', 'organizationName']);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"short\",\n  \"organizationName\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "signup"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /auth/me with session (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "",
+                  "pm.test('Response has user session details', function () {",
+                  "  const u = pm.response.json().data.user;",
+                  "  pm.expect(u).to.include.all.keys('id', 'email', 'organizationName', 'tenantId');",
+                  "  pm.expect(u.tenantId).to.match(/^[a-f0-9]{24}$/);",
+                  "});",
+                  "",
+                  "pm.test('Is the signed-up user', function () {",
+                  "  pm.expect(pm.response.json().data.user.email).to.equal(pm.environment.get('authEmailA'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout clears the session (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Cookie is cleared', function () {",
+                  "  const sc = [].concat(pm.response.headers.get('Set-Cookie') || []).join(';');",
+                  "  pm.expect(sc).to.include('accessToken=;');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /auth/me after logout (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Envelope: success=false with error.code UNAUTHORIZED', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'UNAUTHORIZED');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tenant data requires a session: GET /vendors (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Envelope: success=false with error.code UNAUTHORIZED', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'UNAUTHORIZED');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vendors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vendors"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tenant data requires a session: GET /ingestion/jobs (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Envelope: success=false with error.code UNAUTHORIZED', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'UNAUTHORIZED');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login with wrong password (401 INVALID_CREDENTIALS)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Envelope: success=false with error.code INVALID_CREDENTIALS', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'INVALID_CREDENTIALS');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{authEmailA}}\",\n  \"password\": \"Wrong-Pass-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login with unknown email gives the same error (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Envelope: success=false with error.code INVALID_CREDENTIALS', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'INVALID_CREDENTIALS');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});",
+                  "",
+                  "pm.test('No hint whether the email exists', function () {",
+                  "  pm.expect(pm.response.json().error.message).to.equal('Invalid email or password');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody-{{$timestamp}}@example.com\",\n  \"password\": \"Wrong-Pass-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login (200, sets session cookie)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "",
+                  "pm.test('Response has user session details', function () {",
+                  "  const u = pm.response.json().data.user;",
+                  "  pm.expect(u).to.include.all.keys('id', 'email', 'organizationName', 'tenantId');",
+                  "  pm.expect(u.tenantId).to.match(/^[a-f0-9]{24}$/);",
+                  "});",
+                  "",
+                  "",
+                  "pm.test('Session cookie is HttpOnly and not exposed in the body', function () {",
+                  "  const sc = [].concat(pm.response.headers.get('Set-Cookie') || []).join(';');",
+                  "  pm.expect(sc).to.include('accessToken=');",
+                  "  pm.expect(sc.toLowerCase()).to.include('httponly');",
+                  "  pm.expect(JSON.stringify(pm.response.json())).to.not.include('passwordHash');",
+                  "});",
+                  "",
+                  "pm.test('Same tenant as at signup', function () {",
+                  "  pm.expect(pm.response.json().data.user.tenantId).to.equal(pm.environment.get('tenantAId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{authEmailA}}\",\n  \"password\": \"{{authPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "pm.test('Database is connected', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.status).to.equal('ok');",
+                  "  pm.expect(d.db.status).to.equal('connected');",
+                  "  pm.expect(d.uptimeSeconds).to.be.a('number');",
+                  "  pm.expect(new Date(d.timestamp).toString()).to.not.equal('Invalid Date');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Items CRUD lifecycle",
+      "item": [
+        {
+          "name": "Create item (201)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('uniqueSlug', 'newman-item-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "",
+                  "pm.test('Item has expected schema', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d).to.include.all.keys('id', 'name', 'slug', 'price', 'quantity', 'status', 'createdAt', 'updatedAt');",
+                  "  pm.expect(d.id).to.match(/^[a-f0-9]{24}$/);",
+                  "  pm.expect(d.price).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Persisted values echo the request', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.slug).to.equal(pm.environment.get('uniqueSlug'));",
+                  "  pm.expect(d.price).to.equal(42.5);",
+                  "  pm.expect(d.status).to.equal('active');",
+                  "});",
+                  "pm.test('Save createdItemId to environment', function () {",
+                  "  const id = pm.response.json().data.id;",
+                  "  pm.expect(id).to.be.a('string');",
+                  "  pm.environment.set('createdItemId', id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Newman Test Item\",\n  \"slug\": \"{{uniqueSlug}}\",\n  \"description\": \"Created by the Newman suite\",\n  \"category\": \"testing\",\n  \"price\": 42.5,\n  \"quantity\": 7,\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Read item (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "",
+                  "pm.test('Item has expected schema', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d).to.include.all.keys('id', 'name', 'slug', 'price', 'quantity', 'status', 'createdAt', 'updatedAt');",
+                  "  pm.expect(d.id).to.match(/^[a-f0-9]{24}$/);",
+                  "  pm.expect(d.price).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Returns the created item', function () {",
+                  "  pm.expect(pm.response.json().data.id).to.equal(pm.environment.get('createdItemId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/{{createdItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items",
+                "{{createdItemId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List items with search + pagination meta (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "pm.test('data is an array containing the created item', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.data).to.be.an('array').with.lengthOf(1);",
+                  "  pm.expect(b.data[0].id).to.equal(pm.environment.get('createdItemId'));",
+                  "});",
+                  "pm.test('meta has pagination fields', function () {",
+                  "  pm.expect(pm.response.json().meta).to.include.all.keys('page', 'limit', 'total', 'totalPages');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items?search={{uniqueSlug}}&page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{uniqueSlug}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update item (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "",
+                  "pm.test('Item has expected schema', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d).to.include.all.keys('id', 'name', 'slug', 'price', 'quantity', 'status', 'createdAt', 'updatedAt');",
+                  "  pm.expect(d.id).to.match(/^[a-f0-9]{24}$/);",
+                  "  pm.expect(d.price).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('Fields were updated, others untouched', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.price).to.equal(99.99);",
+                  "  pm.expect(d.quantity).to.equal(3);",
+                  "  pm.expect(d.status).to.equal('archived');",
+                  "  pm.expect(d.name).to.equal('Newman Test Item');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 99.99,\n  \"quantity\": 3,\n  \"status\": \"archived\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/{{createdItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items",
+                "{{createdItemId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete item (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "pm.test('Reports deletion of the right id', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.deleted).to.equal(true);",
+                  "  pm.expect(d.id).to.equal(pm.environment.get('createdItemId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/{{createdItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items",
+                "{{createdItemId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verify deleted item returns 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Envelope: success=false with error.code NOT_FOUND', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'NOT_FOUND');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/{{createdItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items",
+                "{{createdItemId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Validation & negative tests",
+      "item": [
+        {
+          "name": "Create with invalid payload (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code VALIDATION_ERROR', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'VALIDATION_ERROR');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});",
+                  "",
+                  "pm.test('details lists offending fields', function () {",
+                  "  const details = pm.response.json().error.details;",
+                  "  pm.expect(details).to.be.an('array').that.is.not.empty;",
+                  "  const paths = details.map(function (d) { return d.path; });",
+                  "  pm.expect(paths).to.include.members(['name', 'price', 'quantity', 'status']);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"price\": -5,\n  \"quantity\": 1.5,\n  \"status\": \"bogus\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create with missing required price (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code VALIDATION_ERROR', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'VALIDATION_ERROR');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"No price\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create with malformed JSON (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code INVALID_JSON', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'INVALID_JSON');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get with malformed id (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code VALIDATION_ERROR', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'VALIDATION_ERROR');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/not-an-object-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items",
+                "not-an-object-id"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update with empty body (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code VALIDATION_ERROR', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'VALIDATION_ERROR');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items/000000000000000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items",
+                "000000000000000000000000"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List with invalid query (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code VALIDATION_ERROR', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'VALIDATION_ERROR');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/items?limit=1000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "items"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "1000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unknown route (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Envelope: success=false with error.code NOT_FOUND', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'NOT_FOUND');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "does-not-exist"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Ingestion & normalisation",
+      "item": [
+        {
+          "name": "Upload price sheet (201, row-level error tolerated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "pm.test('Job stats reflect parsed rows and the one bad row', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.status).to.equal('completed_with_errors');",
+                  "  pm.expect(d.stats.rowsParsed).to.equal(5);",
+                  "  pm.expect(d.stats.rowsFailed).to.equal(1);",
+                  "  pm.expect(d.stats.transactionsCreated + d.stats.duplicatesIgnored).to.equal(5);",
+                  "  pm.expect(d.rowErrors).to.have.lengthOf(1);",
+                  "  pm.expect(d.fileHash).to.match(/^[a-f0-9]{64}$/);",
+                  "});",
+                  "pm.test('Save ingestJobId', function () { pm.environment.set('ingestJobId', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "price-sheet.csv"
+                },
+                {
+                  "key": "sourceType",
+                  "value": "price_sheet",
+                  "type": "text"
+                },
+                {
+                  "key": "allowDuplicate",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Re-upload identical file is rejected (409 DUPLICATE_FILE)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Envelope: success=false with error.code DUPLICATE_FILE', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'DUPLICATE_FILE');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Points at an existing job (details.jobId)', function () {",
+                  "  pm.expect(pm.response.json().error.details.jobId).to.match(/^[a-f0-9]{24}$/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "price-sheet.csv"
+                },
+                {
+                  "key": "sourceType",
+                  "value": "price_sheet",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reprocessing with allowDuplicate creates zero new transactions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('All rows de-duplicated by fingerprint', function () {",
+                  "  const s = pm.response.json().data.stats;",
+                  "  pm.expect(s.transactionsCreated).to.equal(0);",
+                  "  pm.expect(s.duplicatesIgnored).to.equal(5);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "price-sheet.csv"
+                },
+                {
+                  "key": "sourceType",
+                  "value": "price_sheet",
+                  "type": "text"
+                },
+                {
+                  "key": "allowDuplicate",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get job (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "pm.test('Row error is reported with its row number', function () {",
+                  "  const e = pm.response.json().data.rowErrors[0];",
+                  "  pm.expect(e.rowNumber).to.equal(7);",
+                  "  pm.expect(e.message).to.match(/unit price/i);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs/{{ingestJobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs",
+                "{{ingestJobId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List raw records filtered to errors (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('One failed raw record retaining the source row', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.data).to.have.lengthOf(1);",
+                  "  pm.expect(b.data[0].status).to.equal('error');",
+                  "  pm.expect(b.meta.total).to.equal(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs/{{ingestJobId}}/records?status=error",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs",
+                "{{ingestJobId}}",
+                "records"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "error"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Tally XML (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('3 purchase lines + 1 payment parsed, journal skipped', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.status).to.equal('completed');",
+                  "  pm.expect(d.stats.rowsParsed).to.equal(4);",
+                  "  pm.expect(d.stats.rowsSkipped).to.equal(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "tally-purchases.xml"
+                },
+                {
+                  "key": "sourceType",
+                  "value": "tally",
+                  "type": "text"
+                },
+                {
+                  "key": "allowDuplicate",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vendor spellings resolved to a single vendor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Exactly one Acme vendor with aliases and tax id', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d).to.have.lengthOf(1);",
+                  "  pm.expect(d[0].status).to.equal('active');",
+                  "  pm.expect(d[0].taxId).to.equal('27AAACA1234A1Z5');",
+                  "  pm.expect(d[0].aliases).to.be.an('array').that.is.not.empty;",
+                  "  pm.environment.set('acmeVendorId', d[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vendors?search=acme",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vendors"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "acme"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Transactions for vendor are normalised (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "pm.test('Envelope: success=true and data present', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', true);",
+                  "  pm.expect(b).to.have.property('data');",
+                  "  pm.expect(b).to.not.have.property('error');",
+                  "});",
+                  "pm.test('Response time < 1500ms', function () { pm.expect(pm.response.responseTime).to.be.below(1500); });",
+                  "",
+                  "pm.test('Every row has currency, base amount and traceability', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d).to.be.an('array').that.is.not.empty;",
+                  "  d.forEach(function (t) {",
+                  "    pm.expect(t).to.include.keys('kind', 'sourceType', 'jobId', 'rawRecordId', 'currency');",
+                  "    if (t.kind !== 'price_quote') pm.expect(t.amountBase).to.be.a('number');",
+                  "  });",
+                  "});",
+                  "pm.test('USD quote converted to INR (0.88 USD/kg * 83.2)', function () {",
+                  "  const q = pm.response.json().data.find(function (t) { return t.currency === 'USD'; });",
+                  "  pm.expect(q, 'USD quote present').to.exist;",
+                  "  pm.expect(q.unitPriceBase).to.be.closeTo(73.216, 0.001);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions?vendorId={{acmeVendorId}}&limit=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "vendorId",
+                  "value": "{{acmeVendorId}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reference data lists units and FX (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Has units and base currency', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.units).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(d.currency.baseCurrency).to.equal('INR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reference",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reference"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PDF invoice not enabled (501)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 501', function () { pm.response.to.have.status(501); });",
+                  "pm.test('Envelope: success=false with error.code NOT_IMPLEMENTED', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'NOT_IMPLEMENTED');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "sample-invoice.pdf"
+                },
+                {
+                  "key": "sourceType",
+                  "value": "pdf_invoice",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Wrong file type for source (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code UNSUPPORTED_FILE_TYPE', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'UNSUPPORTED_FILE_TYPE');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "tally-purchases.xml"
+                },
+                {
+                  "key": "sourceType",
+                  "value": "price_sheet",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Missing file (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code FILE_REQUIRED', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'FILE_REQUIRED');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sourceType",
+                  "value": "price_sheet",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Invalid sourceType (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code VALIDATION_ERROR', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'VALIDATION_ERROR');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "price-sheet.csv"
+                },
+                {
+                  "key": "sourceType",
+                  "value": "carrier_pigeon",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Merge vendor into itself (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Envelope: success=false with error.code BAD_REQUEST', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'BAD_REQUEST');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetId\": \"{{acmeVendorId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vendors/{{acmeVendorId}}/merge",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vendors",
+                "{{acmeVendorId}}",
+                "merge"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Tenant isolation",
+      "item": [
+        {
+          "name": "Signup as a second organization (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Different tenant than organization A', function () {",
+                  "  const t = pm.response.json().data.user.tenantId;",
+                  "  pm.expect(t).to.not.equal(pm.environment.get('tenantAId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{authEmailB}}\",\n  \"password\": \"{{authPassword}}\",\n  \"organizationName\": \"Newman Org B\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "signup"
+              ]
+            }
+          }
+        },
+        {
+          "name": "B cannot read A's vendor (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Envelope: success=false with error.code NOT_FOUND', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'NOT_FOUND');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vendors/{{acmeVendorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vendors",
+                "{{acmeVendorId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "B cannot modify A's vendor (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Envelope: success=false with error.code NOT_FOUND', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'NOT_FOUND');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vendors/{{acmeVendorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vendors",
+                "{{acmeVendorId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "B cannot read A's ingestion job (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Envelope: success=false with error.code NOT_FOUND', function () {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b).to.have.property('success', false);",
+                  "  pm.expect(b.error).to.have.property('code', 'NOT_FOUND');",
+                  "  pm.expect(b.error).to.have.property('message').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs/{{ingestJobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs",
+                "{{ingestJobId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "B's vendor list is empty: no cross-tenant leakage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 and B sees nothing of A', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().meta.total).to.equal(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vendors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vendors"
+              ]
+            }
+          }
+        },
+        {
+          "name": "B's transactions filtered by A's job id are empty",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 with zero rows', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().meta.total).to.equal(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions?jobId={{ingestJobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "jobId",
+                  "value": "{{ingestJobId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "B can ingest the very same file (duplicate detection is per tenant)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 (not 409)', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Creates fresh transactions in B', function () {",
+                  "  pm.expect(pm.response.json().data.stats.transactionsCreated).to.equal(5);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "price-sheet.csv"
+                },
+                {
+                  "key": "sourceType",
+                  "value": "price_sheet",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "jobs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "B gets its own Acme vendor, distinct from A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('One vendor, different id than A', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d).to.have.lengthOf(1);",
+                  "  pm.expect(d[0].id).to.not.equal(pm.environment.get('acmeVendorId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vendors?search=acme",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vendors"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "acme"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Log back in as A (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{authEmailA}}\",\n  \"password\": \"{{authPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "A's data is untouched by B's activity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 and still the same active vendor', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().data.id).to.equal(pm.environment.get('acmeVendorId'));",
+                  "  pm.expect(pm.response.json().data.status).to.equal('active');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}",
+                "disabled": false
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vendors/{{acmeVendorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vendors",
+                "{{acmeVendorId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

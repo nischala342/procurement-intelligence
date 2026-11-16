@@ -1,0 +1,7 @@
+Supplier,GSTIN,SKU,Item,UOM,Unit Price,Currency,Effective Date
+Acme Pvt Ltd,27AAACA1234A1Z5,STL-001,Steel Rod 12mm,kg,72.50,INR,01/04/2025
+ACME Private Limited,27AAACA1234A1Z5,STL-001,Steel Rod 12mm,Kgs,0.88,USD,15/04/2025
+Globex Corporation,,PKG-010,Corrugated Box Large,dozen,540,INR,01/04/2025
+Globex Corp.,,PKG-010,Corrugated box large,pcs,47,INR,10/04/2025
+Initech LLC,,OIL-200,Hydraulic Oil,L,310,Rs,01/04/2025
+Initech LLC,,BAD-1,Broken Row,pcs,,INR,01/04/2025

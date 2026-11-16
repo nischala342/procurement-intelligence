@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDATA>
+        <TALLYMESSAGE>
+          <VOUCHER VCHTYPE="Purchase" ACTION="Create">
+            <DATE>20250405</DATE>
+            <VOUCHERNUMBER>PUR-001</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>Acme Private Limited</PARTYLEDGERNAME>
+            <PARTYGSTIN>27AAACA1234A1Z5</PARTYGSTIN>
+            <ALLINVENTORYENTRIES.LIST>
+              <STOCKITEMNAME>Steel Rod 12mm</STOCKITEMNAME>
+              <RATE>73.00/Kgs</RATE>
+              <BILLEDQTY>500 Kgs</BILLEDQTY>
+              <AMOUNT>-36500.00</AMOUNT>
+            </ALLINVENTORYENTRIES.LIST>
+            <ALLINVENTORYENTRIES.LIST>
+              <STOCKITEMNAME>Hydraulic Oil</STOCKITEMNAME>
+              <RATE>305.00/Ltr</RATE>
+              <BILLEDQTY>20 Ltr</BILLEDQTY>
+              <AMOUNT>-6100.00</AMOUNT>
+            </ALLINVENTORYENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE>
+          <VOUCHER VCHTYPE="Purchase" ACTION="Create">
+            <DATE>20250412</DATE>
+            <VOUCHERNUMBER>PUR-002</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>Globex Corporation</PARTYLEDGERNAME>
+            <ALLINVENTORYENTRIES.LIST>
+              <STOCKITEMNAME>Corrugated Box Large</STOCKITEMNAME>
+              <RATE>45.00/Nos</RATE>
+              <BILLEDQTY>200 Nos</BILLEDQTY>
+              <AMOUNT>-9000.00</AMOUNT>
+            </ALLINVENTORYENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE>
+          <VOUCHER VCHTYPE="Payment" ACTION="Create">
+            <DATE>20250420</DATE>
+            <VOUCHERNUMBER>PAY-001</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>Acme Private Limited</PARTYLEDGERNAME>
+            <NARRATION>Against PUR-001</NARRATION>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Acme Private Limited</LEDGERNAME>
+              <ISPARTYLEDGER>Yes</ISPARTYLEDGER>
+              <AMOUNT>42600.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE>
+          <VOUCHER VCHTYPE="Journal" ACTION="Create">
+            <DATE>20250430</DATE>
+            <VOUCHERNUMBER>JRN-001</VOUCHERNUMBER>
+          </VOUCHER>
+        </TALLYMESSAGE>
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>

@@ -1,0 +1,5 @@
+%PDF-1.4
+% Minimal stand-in used to verify that pdf_invoice returns 501 NOT_IMPLEMENTED.
+1 0 obj << /Type /Catalog >> endobj
+trailer << /Root 1 0 R >>
+%%EOF

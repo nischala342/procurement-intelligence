@@ -1,0 +1,31 @@
+{
+  "name": "procurement-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Procurement Intelligence monorepo: Express/TypeScript API, React/Vite web app, MongoDB.",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "scripts/seed"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @pi/api\" \"npm run dev -w @pi/web\"",
+    "dev:api": "npm run dev -w @pi/api",
+    "dev:web": "npm run dev -w @pi/web",
+    "build": "npm run build -w @pi/api && npm run build -w @pi/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test:api",
+    "test:api": "npm run test:api -w @pi/api",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:seed": "npm run seed -w @pi/seed",
+    "db:reset": "npm run reset -w @pi/seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

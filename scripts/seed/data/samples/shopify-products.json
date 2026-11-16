@@ -1,0 +1,14 @@
+{
+  "products": [
+    {
+      "title": "Industrial Gloves",
+      "vendor": "Umbrella Corporation",
+      "handle": "industrial-gloves",
+      "updated_at": "2025-04-01T09:00:00Z",
+      "variants": [
+        { "sku": "GLV-100", "price": "12.00", "inventory_quantity": 300 },
+        { "sku": "GLV-200", "price": "14.50", "inventory_quantity": 120 }
+      ]
+    }
+  ]
+}
