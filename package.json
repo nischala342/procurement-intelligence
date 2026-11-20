@@ -22,6 +22,10 @@
     "test:api": "npm run test:api -w @pi/api",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
+    "db:tools": "docker compose --profile tools up -d mongo-express",
+    "docker:up": "docker compose --profile app up -d --build",
+    "docker:seed": "docker compose --profile seed run --rm --build seed",
+    "docker:down": "docker compose --profile app --profile tools --profile seed down",
     "db:seed": "npm run seed -w @pi/seed",
     "db:reset": "npm run reset -w @pi/seed"
   },

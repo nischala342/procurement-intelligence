@@ -1,24 +1,7 @@
-import type { FilterQuery } from 'mongoose';
 import { AppError } from '../../utils/AppError';
 import { TransactionModel } from '../transactions/model';
-import { ProductModel, type ProductAttrs } from './model';
-import type { ListProductsQuery } from './schema';
-
-const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-export async function listProducts(tenantId: string, q: ListProductsQuery) {
-  const filter: FilterQuery<ProductAttrs> = { tenantId };
-  if (q.status) filter.status = q.status;
-  if (q.search) {
-    const rx = new RegExp(escapeRegex(q.search), 'i');
-    filter.$or = [{ name: rx }, { aliases: rx }, { sku: rx }];
-  }
-  const [items, total] = await Promise.all([
-    ProductModel.find(filter).sort({ name: 1, _id: 1 }).skip((q.page - 1) * q.limit).limit(q.limit),
-    ProductModel.countDocuments(filter),
-  ]);
-  return { items, meta: { page: q.page, limit: q.limit, total, totalPages: Math.max(1, Math.ceil(total / q.limit)) } };
-}
+import { ProductModel } from './model';
+import type { UpdateProductInput } from './schema';
 
 export async function getProduct(tenantId: string, id: string) {
   const p = await ProductModel.findOne({ _id: id, tenantId });
@@ -26,12 +9,16 @@ export async function getProduct(tenantId: string, id: string) {
   return p;
 }
 
-export async function confirmProduct(tenantId: string, id: string) {
+export async function updateProduct(tenantId: string, id: string, input: UpdateProductInput) {
   const product = await getProduct(tenantId, id);
   if (product.status === 'merged') throw AppError.conflict('A merged product cannot be edited');
-  product.status = 'active';
-  product.set('possibleDuplicateOf', undefined);
-  product.set('similarityScore', undefined);
+  if (input.leadTimeDays !== undefined) product.set('leadTimeDays', input.leadTimeDays ?? undefined); // null clears
+  if (input.safetyStockDays !== undefined) product.set('safetyStockDays', input.safetyStockDays ?? undefined);
+  if (input.status) {
+    product.status = input.status;
+    product.set('possibleDuplicateOf', undefined);
+    product.set('similarityScore', undefined);
+  }
   await product.save();
   return product;
 }

@@ -15,6 +15,15 @@ const authWindowMs = 15 * 60 * 1000;
 const tooMany = (_req: unknown, res: Parameters<typeof sendError>[0]) =>
   sendError(res, 429, { code: 'RATE_LIMITED', message: 'Too many attempts, please try again in a few minutes.' });
 
+/** Advisory scans are CPU/DB (and optionally LLM) heavy: allow only a few per minute per IP. */
+export const heavyLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 15,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  handler: (_req, res) => sendError(res, 429, { code: 'RATE_LIMITED', message: 'Too many scans, please wait a minute.' }),
+});
+
 /** Brute-force guard: only failed logins count against the limit. */
 export const loginLimiter = rateLimit({
   windowMs: authWindowMs,

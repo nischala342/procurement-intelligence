@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 48" width="460" height="96" role="img" aria-label="quoteScout.info">
+  <title>quoteScout.info</title>
+  <style>
+    .lens { animation: scan 4.8s ease-in-out infinite; transform-origin: 21px 21px; }
+    .glint { animation: glint 4.8s ease-in-out infinite; }
+    .bar { transform-box: fill-box; transform-origin: 50% 100%; animation: bar 4.8s ease-in-out infinite; }
+    .find { animation-name: find; }
+    .b3 { animation-delay: -1.6s; }
+    .word { font: 800 27px system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: -1px; }
+    .tld { font: 600 17px system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    @keyframes scan { 0%,100% { transform: translate(0,0) rotate(0) } 25% { transform: translate(-2.4px,.6px) rotate(-6deg) } 55% { transform: translate(2.7px,-.4px) rotate(5deg) } 75% { transform: translate(0,0) rotate(0) } }
+    @keyframes glint { 0%,60% { transform: rotate(25deg) translateX(-9px); opacity: 0 } 68% { opacity: 1 } 85%,100% { transform: rotate(25deg) translateX(30px); opacity: 0 } }
+    @keyframes bar { 0%,100% { transform: scaleY(1) } 40% { transform: scaleY(.75) } 70% { transform: scaleY(1.1) } }
+    @keyframes find { 0%,45%,100% { transform: scaleY(1) } 60% { transform: scaleY(.7) } 75% { transform: scaleY(1) } }
+    @media (prefers-reduced-motion: reduce) { .lens, .glint, .bar { animation: none } .glint { opacity: 0 } }
+  </style>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#c026d3"/><stop offset="1" stop-color="#f97316"/></linearGradient>
+    <linearGradient id="t" x1="0" x2="1"><stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#c026d3"/><stop offset="1" stop-color="#f97316"/></linearGradient>
+    <clipPath id="c"><circle cx="21" cy="21" r="9.6"/></clipPath>
+  </defs>
+  <rect width="48" height="48" rx="13" fill="url(#g)"/>
+  <rect class="bar" x="14.4" y="16.5" width="3.3" height="9" rx="1.65" fill="#fff" fill-opacity=".55"/>
+  <rect class="bar find" x="18.6" y="20.4" width="3.3" height="5.1" rx="1.65" fill="#fde68a"/>
+  <rect class="bar b3" x="22.8" y="14.4" width="3.3" height="11.1" rx="1.65" fill="#fff" fill-opacity=".55"/>
+  <g class="lens">
+    <circle cx="21" cy="21" r="10.8" fill="none" stroke="#fff" stroke-width="3.9"/>
+    <path d="M29 29 37.4 37.4" stroke="#fff" stroke-width="4.8" stroke-linecap="round"/>
+    <g clip-path="url(#c)"><rect class="glint" x="3" y="6" width="4.5" height="30" fill="#fff" fill-opacity=".55" transform="rotate(25 21 21)"/></g>
+  </g>
+  <text x="60" y="33" class="word" fill="#15122e">quote<tspan fill="url(#t)">Scout</tspan><tspan class="tld" fill="#64657a" dx="1">.info</tspan></text>
+</svg>

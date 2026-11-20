@@ -67,7 +67,7 @@ describe('units and currency', () => {
   });
   it('1 dozen and 12 pcs normalise to the same base quantity; INR/USD to INR', () => {
     const base = { rowNumber: 1, raw: {}, kind: 'invoice_line' as const };
-    const opts = { dayFirst: true, defaultCurrency: 'INR' };
+    const opts = { dayFirst: true, defaultCurrency: 'INR', baseCurrency: 'INR' };
     const a = normalizeRow({ ...base, quantity: 1, unit: 'dozen', amount: 100 }, opts);
     const b = normalizeRow({ ...base, quantity: 12, unit: 'pcs', amount: 100 }, opts);
     assert.ok(a.ok && b.ok);
@@ -79,14 +79,14 @@ describe('units and currency', () => {
     assert.equal(usd.value.amountBase, 832);
   });
   it('flags unknown unit/currency instead of failing', () => {
-    const r = normalizeRow({ rowNumber: 1, raw: {}, kind: 'invoice_line', amount: 5, quantity: 1, unit: 'bananas', currency: 'XYZ' }, { dayFirst: true, defaultCurrency: 'INR' });
+    const r = normalizeRow({ rowNumber: 1, raw: {}, kind: 'invoice_line', amount: 5, quantity: 1, unit: 'bananas', currency: 'XYZ' }, { dayFirst: true, defaultCurrency: 'INR', baseCurrency: 'INR' });
     assert.ok(r.ok);
     assert.ok(r.value.warnings.includes('UNKNOWN_UNIT:bananas'));
     assert.ok(r.value.warnings.includes('UNKNOWN_CURRENCY:XYZ'));
     assert.equal(r.value.amountBase, undefined);
   });
   it('rejects rows with no amount', () => {
-    const r = normalizeRow({ rowNumber: 1, raw: {}, kind: 'payment' }, { dayFirst: true, defaultCurrency: 'INR' });
+    const r = normalizeRow({ rowNumber: 1, raw: {}, kind: 'payment' }, { dayFirst: true, defaultCurrency: 'INR', baseCurrency: 'INR' });
     assert.equal(r.ok, false);
   });
 });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { usePagedQuery } from '../../../shared/hooks/usePagedQuery';
-import { formatDate, formatMoney } from '../../../shared/lib/format';
+import { formatDate, formatMoney, currencyCode } from '../../../shared/lib/format';
 import { Drawer } from '../../../shared/ui/Drawer';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { Pagination } from '../../../shared/ui/Pagination';
@@ -53,7 +53,7 @@ function PriceHistory({ product, onClose }: { product: Product | null; onClose: 
                   Quoted
                 </th>
                 <th scope="col" className="num">
-                  Per {product?.baseUnit} (INR)
+                  Per {product?.baseUnit} ({currencyCode()})
                 </th>
               </tr>
             </thead>
@@ -67,7 +67,7 @@ function PriceHistory({ product, onClose }: { product: Product | null; onClose: 
                     {r.unit ? ` / ${r.unit}` : ''}
                   </td>
                   <td className="num tnum">
-                    {formatMoney(r.unitPriceBase, 'INR')}
+                    {formatMoney(r.unitPriceBase)}
                     {best != null && r.unitPriceBase === best && rows.length > 1 && (
                       <>
                         {' '}

@@ -1,15 +1,18 @@
+import { currencyCode } from '../../../shared/lib/format';
 import { useState } from 'react';
 import { Card } from '../../../shared/ui/Card';
 import { useIngestion } from '../hooks/IngestionContext';
 import { SOURCES, type SourceConfig } from '../sources';
 import { Dropzone } from './Dropzone';
+import { MarketSources } from './MarketSources';
+import { SampleFiles } from './SampleFiles';
 import { SourceSelector } from './SourceSelector';
 import { UploadQueuePanel } from './UploadQueuePanel';
 
 /** Multi-source ingestion hub: pick a source, drop files, watch the batch upload. */
-export function IngestionHub() {
+export function IngestionHub({ userEmail }: { userEmail?: string } = {}) {
   const { queue } = useIngestion();
-  const [source, setSource] = useState<SourceConfig>(SOURCES[1]!);
+  const [source, setSource] = useState<SourceConfig>(SOURCES[0]!);
   const [rejections, setRejections] = useState<string[]>([]);
 
   return (
@@ -30,7 +33,7 @@ export function IngestionHub() {
           <input
             value={queue.options.defaultCurrency}
             maxLength={3}
-            placeholder="INR"
+            placeholder={currencyCode()}
             aria-label="Default currency (ISO code)"
             onChange={(e) => queue.setOptions({ ...queue.options, defaultCurrency: e.target.value.toUpperCase() })}
           />
@@ -56,6 +59,16 @@ export function IngestionHub() {
           {source.unsupported.join(', ')} {source.unsupported.length > 1 ? 'are' : 'is'} not supported for this source yet.
         </p>
       )}
+
+      <SampleFiles
+        userEmail={userEmail}
+        onUse={(file, s) => {
+          setSource(s);
+          setRejections(queue.addFiles([file], s.sourceType));
+        }}
+      />
+
+      <MarketSources />
 
       <UploadQueuePanel queue={queue} />
     </Card>

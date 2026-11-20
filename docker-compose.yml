@@ -1,3 +1,12 @@
+# quoteScout.info: local database by default, the full stack on demand.
+#
+#   docker compose up -d                          MongoDB only (use with `npm run dev` on the host)   [npm run db:up]
+#   docker compose --profile app up -d --build    + API and web on http://localhost:${WEB_PORT:-8080}  [npm run docker:up]
+#   docker compose --profile seed run --rm seed   demo businesses + sample downloads                    [npm run docker:seed]
+#   docker compose --profile tools up -d mongo-express   password-protected DB browser (needs MONGO_EXPRESS_PASSWORD) [npm run db:tools]
+#
+# Settings come from .env / the platform environment (none are stored here). Behind HTTPS (e.g. quoteScout.info) set
+# JWT_SECRET (>= 32 chars), COOKIE_SECURE=true and CORS_ORIGIN=https://quotescout.info.
 services:
   mongo:
     image: mongo:7
@@ -5,7 +14,9 @@ services:
     restart: unless-stopped
     command: ["--replSet", "rs0", "--bind_ip_all"]
     ports:
-      - "${MONGO_PORT:-27017}:27017"
+      # loopback only: the other containers reach it as mongo:27017; the host can still use localhost:27017.
+      # Authentication is not enabled (a replica set needs a keyfile for that), so never publish this port publicly.
+      - "127.0.0.1:${MONGO_PORT:-27017}:27017"
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -18,7 +29,75 @@ services:
       retries: 20
       start_period: 5s
 
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    image: quotescout-api
+    container_name: pi-api
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - MONGO_URI=mongodb://mongo:27017/procurement_intelligence?directConnection=true
+      # Everything below is passed through from .env / the platform's environment. Nothing secret is stored in this file;
+      # unset values fall back to the API's own defaults (see .env.example for what each does).
+      - JWT_SECRET            # REQUIRED (>= 32 chars): the API refuses to start in production without it
+      - COOKIE_SECURE         # false for plain http://localhost, true behind HTTPS (unset = true in production)
+      - CORS_ORIGIN
+      - LOG_LEVEL
+      - RATE_LIMIT_WINDOW_MS
+      - RATE_LIMIT_MAX
+      - AUTH_RATE_LIMIT_MAX
+      - JWT_EXPIRES_DAYS
+      - MAX_UPLOAD_MB
+      - ANTHROPIC_API_KEY     # optional: Claude writes insight text (names and metrics are sent to Anthropic)
+      - ADVISORY_MODEL
+      - ADVISORY_LLM_TIMEOUT_MS
+      - ADVISORY_LLM_MAX_PER_RUN
+    # not published: only the web container (nginx) talks to it
+
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      args:
+        # baked into the bundle at build time; rebuild after changing (docker compose --profile app build web)
+        VITE_DEMO_MODE: ${VITE_DEMO_MODE:-true}
+    image: quotescout-web
+    container_name: pi-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      # demo sample downloads written by the seed job
+      - samples:/usr/share/nginx/samples:ro
+
+  seed:
+    profiles: ["seed"]
+    build:
+      context: .
+      dockerfile: docker/seed.Dockerfile
+    image: quotescout-seed
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://mongo:27017/procurement_intelligence?directConnection=true
+    volumes:
+      - samples:/samples
+    # Reset first with:  docker compose --profile seed run --rm seed npm run reset -w @pi/seed
+
   mongo-express:
+    profiles: ["tools"]
     image: mongo-express:1
     container_name: pi-mongo-express
     restart: unless-stopped
@@ -26,10 +105,22 @@ services:
       mongo:
         condition: service_healthy
     ports:
-      - "${MONGO_EXPRESS_PORT:-8081}:8081"
+      - "127.0.0.1:${MONGO_EXPRESS_PORT:-8081}:8081"
+    # The image falls back to a well-known default password when none is set, so refuse to start without one.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        [ -n "$$ME_CONFIG_BASICAUTH_PASSWORD" ] || { echo "Set MONGO_EXPRESS_PASSWORD (a strong password) in .env" >&2; exit 1; };
+        exec /sbin/tini -- /docker-entrypoint.sh "$$@"
+      - mongo-express
+    command: ["mongo-express"]
     environment:
-      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/?replicaSet=rs0&directConnection=true
-      ME_CONFIG_BASICAUTH: "false"
+      - ME_CONFIG_MONGODB_URL=mongodb://mongo:27017/?replicaSet=rs0&directConnection=true
+      - ME_CONFIG_BASICAUTH=true
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:-admin}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD:-}   # no default: set it in .env
 
 volumes:
   mongo-data:
+  samples:

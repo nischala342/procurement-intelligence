@@ -15,7 +15,7 @@ const isDuplicateKey = (e: unknown) => (e as { code?: number })?.code === 11000;
 export async function signup(input: SignupInput) {
   if (await UserModel.exists({ email: input.email })) throw new AppError(409, 'EMAIL_TAKEN', 'An account with this email already exists');
   const passwordHash = await hashPassword(input.password);
-  const tenant = await TenantModel.create({ name: input.organizationName });
+  const tenant = await TenantModel.create({ name: input.organizationName, ...(input.baseCurrency ? { baseCurrency: input.baseCurrency } : {}), ...(input.country ? { country: input.country } : {}) });
   try {
     return await UserModel.create({ email: input.email, passwordHash, organizationName: input.organizationName, tenantId: tenant._id });
   } catch (e) {
@@ -30,6 +30,12 @@ export async function login(input: LoginInput) {
   const ok = await bcrypt.compare(input.password, user?.passwordHash ?? DUMMY_HASH);
   if (!user || !ok) throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
   return user;
+}
+
+/** Organization settings shown in the session (currency drives every money figure in the UI). */
+export async function tenantProfile(tenantId: unknown) {
+  const t = await TenantModel.findById(tenantId).select('name baseCurrency country').lean();
+  return { baseCurrency: t?.baseCurrency ?? 'INR', country: t?.country ?? null };
 }
 
 export async function getUser(userId: string) {

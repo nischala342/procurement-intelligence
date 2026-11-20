@@ -2,13 +2,15 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { Types, type AnyBulkWriteOperation } from 'mongoose';
 import { AppError } from '../../utils/AppError';
-import { BASE_CURRENCY } from '../reference/currency';
+import { tenantCurrency } from '../auth/tenantSettings';
 import { ProductModel } from '../products/model';
 import { TransactionModel, type TransactionAttrs } from '../transactions/model';
 import { VendorModel } from '../vendors/model';
 import { IngestionJobModel, RawRecordModel } from './model';
 import { normalizeProductName, normalizeSku, normalizeVendorName } from './normalise/names';
+import { normalizeProcurement } from './normalise/procurement';
 import { normalizeRow } from './normalise/row';
+import { normalizeUnit } from '../reference/units';
 import { PARSERS, ALLOWED_EXTENSIONS, type ParsedRow, type ParseResult, type SourceType } from './parsers';
 import { EntityResolver } from './resolver';
 
@@ -56,7 +58,8 @@ export async function runIngestion(input: IngestInput) {
   const tenantOid = new Types.ObjectId(input.tenantId);
   const fileHash = sha('sha256', input.buffer);
   const dayFirst = input.dayFirst ?? true;
-  const defaultCurrency = input.defaultCurrency ?? BASE_CURRENCY;
+  const baseCurrency = await tenantCurrency(input.tenantId);
+  const defaultCurrency = input.defaultCurrency ?? baseCurrency;
 
   if (!input.allowDuplicate) {
     const prior = await IngestionJobModel.findOne({
@@ -124,7 +127,7 @@ export async function runIngestion(input: IngestInput) {
 
     for (const row of parsed.rows) {
       const rawId = new Types.ObjectId();
-      const norm = normalizeRow(row, { dayFirst, defaultCurrency });
+      const norm = normalizeRow(row, { dayFirst, defaultCurrency, baseCurrency });
       if (!norm.ok) {
         errors.push({ rowNumber: row.rowNumber, message: norm.error });
         raws.push({ _id: rawId, tenantId: tenantOid, jobId: job._id, rowNumber: row.rowNumber, payload: row.raw, status: 'error', error: norm.error });
@@ -139,6 +142,7 @@ export async function runIngestion(input: IngestInput) {
         const v = await resolver.resolveVendor(row.vendorName, row.vendorTaxId);
         if (v) {
           vendorId = v.id;
+          await resolver.applyVendorProfile(v.id, row.vendorProfile);
           if (v.outcome === 'created') stats.vendorsCreated++;
           else if (v.outcome === 'review') (stats.vendorsCreated++, stats.needsReview++);
           else stats.vendorsMatched++;
@@ -155,6 +159,7 @@ export async function runIngestion(input: IngestInput) {
         });
         if (p) {
           productId = p.id;
+          await resolver.applyProductProfile(p.id, row.productProfile);
           if (p.outcome === 'created') stats.productsCreated++;
           else if (p.outcome === 'review') (stats.productsCreated++, stats.needsReview++);
           else stats.productsMatched++;
@@ -184,6 +189,7 @@ export async function runIngestion(input: IngestInput) {
               ...(productId ? { productId } : {}),
               ...(row.reference ? { reference: row.reference } : {}),
               ...(row.description ? { description: row.description } : {}),
+              ...(row.procurement ? { procurement: normalizeProcurement(row.procurement, { dayFirst, ...(n.fxRate != null ? { fxRate: n.fxRate } : {}), ...(n.unit ? { unitFactor: normalizeUnit(n.unit)?.factor ?? 1 } : {}) }) } : {}),
               fingerprint: `${base}#${occurrence}`,
             } as Partial<TransactionAttrs>,
           },

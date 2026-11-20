@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "test:api": "node tests/postman/run-newman.js",
-    "test:unit": "tsx --test tests/unit/ingestion.test.ts tests/unit/auth.test.ts",
+    "test:unit": "tsx --test tests/unit/ingestion.test.ts tests/unit/auth.test.ts tests/unit/intelligence.test.ts tests/unit/product-intelligence.test.ts tests/unit/advisory.test.ts tests/unit/sourcing.test.ts",
     "postman:build": "node tests/postman/build-collection.js"
   },
   "dependencies": {

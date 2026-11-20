@@ -12,6 +12,16 @@ const vendorSchema = new Schema(
     aliasKeys: { type: [String], default: [] }, // normalised aliases used for matching
     taxId: { type: String }, // GSTIN/PAN/VAT, normalised
     status: { type: String, enum: VENDOR_STATUSES, default: 'active' },
+    paymentTermsDays: { type: Number, min: 0, max: 365 }, // e.g. 30 => "Net 30"
+    paymentTermsSource: { type: String, enum: ['configured', 'extracted'] },
+    /** supplier master data as reported by the source system (latest seen) */
+    profile: {
+      type: new Schema(
+        { supplierCode: String, country: String, region: String, tier: Number, approvalStatus: String, riskRating: String, esgScore: Number },
+        { _id: false },
+      ),
+      default: undefined,
+    },
     possibleDuplicateOf: { type: Schema.Types.ObjectId, ref: 'Vendor' },
     similarityScore: { type: Number },
     mergedInto: { type: Schema.Types.ObjectId, ref: 'Vendor' },

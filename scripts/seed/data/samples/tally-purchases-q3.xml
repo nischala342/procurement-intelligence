@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDATA>
+        <TALLYMESSAGE>
+          <VOUCHER VCHTYPE="Purchase" ACTION="Create">
+            <DATE>20250520</DATE>
+            <VOUCHERNUMBER>PUR-005</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>Sunrise Packaging</PARTYLEDGERNAME>
+            <ALLINVENTORYENTRIES.LIST>
+              <STOCKITEMNAME>Corrugated Box Large</STOCKITEMNAME>
+              <RATE>47.00/Nos</RATE>
+              <BILLEDQTY>150 Nos</BILLEDQTY>
+              <AMOUNT>-7050.00</AMOUNT>
+            </ALLINVENTORYENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE>
+          <VOUCHER VCHTYPE="Purchase" ACTION="Create">
+            <DATE>20250603</DATE>
+            <VOUCHERNUMBER>PUR-006</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>PackRight Industries</PARTYLEDGERNAME>
+            <ALLINVENTORYENTRIES.LIST>
+              <STOCKITEMNAME>Corrugated Box Large</STOCKITEMNAME>
+              <RATE>44.50/Nos</RATE>
+              <BILLEDQTY>300 Nos</BILLEDQTY>
+              <AMOUNT>-13350.00</AMOUNT>
+            </ALLINVENTORYENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>

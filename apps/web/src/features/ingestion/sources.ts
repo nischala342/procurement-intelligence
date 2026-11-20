@@ -18,6 +18,13 @@ export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // keep in sync with API MAX_U
 
 export const SOURCES: SourceConfig[] = [
   {
+    key: 'purchase-orders',
+    title: 'Purchase Orders (ERP)',
+    description: 'PO line exports with delivery, contract and budget data.',
+    sourceType: 'purchase_orders',
+    accepts: ['.csv', '.xlsx'],
+  },
+  {
     key: 'invoices',
     title: 'Purchase Invoices',
     description: 'Scanned or digital supplier invoices.',
@@ -61,6 +68,7 @@ export const SOURCES: SourceConfig[] = [
 export const sourceBySourceType = (t: SourceType): SourceConfig => SOURCES.find((s) => s.sourceType === t) ?? SOURCES[0]!;
 
 export const SOURCE_LABEL: Record<SourceType, string> = {
+  purchase_orders: 'Purchase orders',
   pdf_invoice: 'Invoice',
   tally: 'Tally',
   shopify: 'Shopify',

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import { Logo } from './Logo';
 
 export interface NavItem {
   route: string;
@@ -8,6 +9,8 @@ export interface NavItem {
 interface Account {
   email: string;
   organizationName: string;
+  baseCurrency?: string;
+  country?: string | null;
 }
 
 const initials = (a: Account) =>
@@ -63,6 +66,7 @@ function UserMenu({ account, onLogout }: { account: Account; onLogout: () => voi
           <div className="menu-id">
             <strong>{account.organizationName}</strong>
             <span className="muted">{account.email}</span>
+            {account.country && <span className="muted">{account.country} · amounts in {account.baseCurrency}</span>}
           </div>
           <button role="menuitem" className="menu-item danger-text" onClick={onLogout}>
             Log out
@@ -85,7 +89,9 @@ export function AppShell({ nav, active, account, onLogout, children }: PropsWith
   return (
     <>
       <header className="topbar">
-        <strong className="brand">Procurement Intelligence</strong>
+        <a href="#/overview" className="brand" aria-label="quoteScout, go to the overview">
+          <Logo size={30} />
+        </a>
         {account && (
           <nav aria-label="Primary">
             {nav.map((n) => (
@@ -99,6 +105,7 @@ export function AppShell({ nav, active, account, onLogout, children }: PropsWith
           <div className="topbar-right">
             <span className="tenant" title="Everything you see belongs to this organization only">
               <span aria-hidden="true">●</span> {account.organizationName}
+              {account.baseCurrency && <span className="tenant-ccy">{account.baseCurrency}</span>}
               <span className="sr-only"> (active workspace)</span>
             </span>
             <Bell />

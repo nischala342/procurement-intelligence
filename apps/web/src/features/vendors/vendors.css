@@ -1,0 +1,18 @@
+.alt-block { margin: 10px 0 18px; }
+.alt-block h4 { margin: 0 0 4px; font-size: .95rem; }
+details.alt-block > summary { cursor: pointer; padding: 6px 0; }
+
+
+
+
+.picker { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0; }
+.picker input[type='search'] { width: 100%; padding: 8px; border: 1px solid var(--border-strong); border-radius: 6px; font: inherit; }
+.picker-results { list-style: none; margin: 8px 0 0; padding: 0; max-height: 210px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.picker-results li { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+.picker-results li:last-child { border-bottom: 0; }
+.picker-selected { display: flex; flex-direction: column; gap: 8px; }
+.chip-btn { cursor: pointer; font: inherit; font-size: .78rem; }
+.chip-btn:hover { background: var(--bad-bg); }
+table.matrix td.best { background: var(--ok-bg); color: var(--ok); font-weight: 700; }
+
+@media (max-width: 760px) { .picker { grid-template-columns: 1fr; } }

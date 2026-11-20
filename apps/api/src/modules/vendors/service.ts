@@ -1,25 +1,8 @@
-import type { FilterQuery } from 'mongoose';
 import { AppError } from '../../utils/AppError';
 import { normalizeVendorName } from '../ingestion/normalise/names';
 import { TransactionModel } from '../transactions/model';
-import { VendorModel, type VendorAttrs } from './model';
-import type { ListVendorsQuery, UpdateVendorInput } from './schema';
-
-const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-export async function listVendors(tenantId: string, q: ListVendorsQuery) {
-  const filter: FilterQuery<VendorAttrs> = { tenantId };
-  if (q.status) filter.status = q.status;
-  if (q.search) {
-    const rx = new RegExp(escapeRegex(q.search), 'i');
-    filter.$or = [{ name: rx }, { aliases: rx }, { taxId: rx }];
-  }
-  const [items, total] = await Promise.all([
-    VendorModel.find(filter).sort({ name: 1, _id: 1 }).skip((q.page - 1) * q.limit).limit(q.limit),
-    VendorModel.countDocuments(filter),
-  ]);
-  return { items, meta: { page: q.page, limit: q.limit, total, totalPages: Math.max(1, Math.ceil(total / q.limit)) } };
-}
+import { VendorModel } from './model';
+import type { UpdateVendorInput } from './schema';
 
 export async function getVendor(tenantId: string, id: string) {
   const v = await VendorModel.findOne({ _id: id, tenantId });
@@ -33,6 +16,10 @@ export async function updateVendor(tenantId: string, id: string, input: UpdateVe
   if (input.name) {
     vendor.name = input.name;
     vendor.normalizedName = normalizeVendorName(input.name) || vendor.normalizedName;
+  }
+  if (input.paymentTermsDays !== undefined) {
+    vendor.set('paymentTermsDays', input.paymentTermsDays ?? undefined); // null clears
+    vendor.set('paymentTermsSource', input.paymentTermsDays == null ? undefined : 'configured');
   }
   if (input.status) {
     vendor.status = input.status;

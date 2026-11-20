@@ -3,7 +3,12 @@ import { jsonOptions } from '../../utils/mongooseJson';
 
 /** A tenant is the isolation boundary: every ingested/canonical document carries its `tenantId`. */
 const tenantSchema = new Schema(
-  { name: { type: String, required: true, trim: true } },
+  {
+    name: { type: String, required: true, trim: true },
+    /** reporting currency: analytics, narratives and RFQs are expressed in it */
+    baseCurrency: { type: String, default: 'INR', uppercase: true, trim: true },
+    country: { type: String, trim: true },
+  },
   { timestamps: true, versionKey: false, toJSON: jsonOptions() },
 );
 

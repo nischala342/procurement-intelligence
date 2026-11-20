@@ -58,6 +58,7 @@ export class EntityResolver {
   private pHasSku = new Set<string>();
   private pMergedInto = new Map<string, string>();
   private memo = new Map<string, Resolution>();
+  private profiled = new Set<string>();
   private readonly tid: Types.ObjectId;
 
   /** All lookups and writes are confined to one tenant: another tenant's vendors/products are never visible here. */
@@ -158,6 +159,28 @@ export class EntityResolver {
     this.vAliases.set(id, new Set([key]));
     if (taxId) this.vTax.set(taxId, id);
     return finish({ id: doc._id, outcome: review ? 'review' : 'created' });
+  }
+
+  /** Records supplier master data (tier, risk, ESG, country...) once per vendor per job; payment terms only if not configured. */
+  async applyVendorProfile(vendorId: Types.ObjectId, profile: Record<string, unknown> | undefined) {
+    if (!profile || !Object.keys(profile).length || this.profiled.has(`v${vendorId}`)) return;
+    this.profiled.add(`v${vendorId}`);
+    const { paymentTermsDays, ...rest } = profile as { paymentTermsDays?: number } & Record<string, unknown>;
+    const set = Object.fromEntries(Object.entries(rest).map(([k, v]) => [`profile.${k}`, v]));
+    if (Object.keys(set).length) await VendorModel.updateOne({ _id: vendorId, tenantId: this.tid }, { $set: set });
+    if (paymentTermsDays != null) {
+      await VendorModel.updateOne(
+        { _id: vendorId, tenantId: this.tid, $or: [{ paymentTermsSource: { $ne: 'configured' } }, { paymentTermsDays: { $exists: false } }] },
+        { $set: { paymentTermsDays, paymentTermsSource: 'extracted' } },
+      );
+    }
+  }
+
+  /** Records the item category once per product per job. */
+  async applyProductProfile(productId: Types.ObjectId, profile: { category?: string; subCategory?: string } | undefined) {
+    if (!profile || (!profile.category && !profile.subCategory) || this.profiled.has(`p${productId}`)) return;
+    this.profiled.add(`p${productId}`);
+    await ProductModel.updateOne({ _id: productId, tenantId: this.tid }, { $set: { ...(profile.category ? { category: profile.category } : {}), ...(profile.subCategory ? { subCategory: profile.subCategory } : {}) } });
   }
 
   async resolveProduct(input: { name?: string; sku?: string; baseUnit: string; dimension: string }): Promise<Resolution | null> {

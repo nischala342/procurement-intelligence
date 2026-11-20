@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { ApiError, UNAUTHORIZED_EVENT } from '../../shared/api';
+import { setDisplayCurrency } from '../../shared/lib/format';
 import * as api from './api';
 import type { AuthUser } from './types';
 
@@ -23,7 +24,12 @@ export function useAuth(): AuthState {
 
 /** Session state backed by the HTTP-only cookie: the browser never sees the token, only the user profile. */
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUserState] = useState<AuthUser | null>(null);
+  // money is formatted in the signed-in organization's base currency; set before any tenant screen renders
+  const setUser = useCallback((u: AuthUser | null) => {
+    setDisplayCurrency(u?.baseCurrency);
+    setUserState(u);
+  }, []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,24 +44,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setUser]);
 
   // A 401 anywhere (expired session) signs the user out.
   useEffect(() => {
     const onUnauthorized = () => setUser(null);
     window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
-  }, []);
+  }, [setUser]);
 
-  const login = useCallback(async (p: api.LoginPayload) => setUser((await api.login(p)).user), []);
-  const signup = useCallback(async (p: api.SignupPayload) => setUser((await api.signup(p)).user), []);
+  const login = useCallback(async (p: api.LoginPayload) => setUser((await api.login(p)).user), [setUser]);
+  const signup = useCallback(async (p: api.SignupPayload) => setUser((await api.signup(p)).user), [setUser]);
   const logout = useCallback(async () => {
     try {
       await api.logout();
     } finally {
       setUser(null); // always drop local state, even if the request failed
     }
-  }, []);
+  }, [setUser]);
 
   const value = useMemo<AuthState>(() => ({ user, isAuthenticated: user !== null, loading, login, signup, logout }), [user, loading, login, signup, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

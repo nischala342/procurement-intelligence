@@ -6,11 +6,13 @@
     "seed": "tsx seed.ts",
     "seed:clean": "tsx seed.ts --clean",
     "reset": "tsx reset.ts",
+    "samples:build": "tsx build-samples.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@faker-js/faker": "^9.2.0",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "mongoose": "^8.8.0"
   },
   "devDependencies": {

@@ -1,0 +1,94 @@
+{
+  "generatedFrom": "datasets/Dataset_Procurement.xlsx",
+  "holdoutFrom": "2024-10-01",
+  "files": [
+    {
+      "file": "uk-purchase-orders-2024-Q4.csv",
+      "title": "United Kingdom: purchase orders Oct–Dec 2024",
+      "format": "CSV",
+      "source": "purchase_orders",
+      "rows": 223,
+      "currency": "GBP",
+      "login": "demo@procurement.test",
+      "description": "PO lines held back from Thames Valley Manufacturing Ltd's demo data. Upload as \"Purchase Orders\" while signed in as demo@procurement.test."
+    },
+    {
+      "file": "uk-purchase-orders-2024-Q4.xlsx",
+      "title": "United Kingdom: purchase orders Oct–Dec 2024 (Excel)",
+      "format": "XLSX",
+      "source": "purchase_orders",
+      "rows": 223,
+      "currency": "GBP",
+      "login": "demo@procurement.test",
+      "description": "Same lines as the UK CSV, as an Excel workbook."
+    },
+    {
+      "file": "de-purchase-orders-2024-Q4.csv",
+      "title": "Germany: purchase orders Oct–Dec 2024",
+      "format": "CSV",
+      "source": "purchase_orders",
+      "rows": 98,
+      "currency": "EUR",
+      "login": "demo.de@procurement.test",
+      "description": "PO lines held back from Rheinwerk Fertigung GmbH's demo data. Upload as \"Purchase Orders\" while signed in as demo.de@procurement.test."
+    },
+    {
+      "file": "us-purchase-orders-2024-Q4.csv",
+      "title": "United States: purchase orders Oct–Dec 2024",
+      "format": "CSV",
+      "source": "purchase_orders",
+      "rows": 54,
+      "currency": "USD",
+      "login": "demo.us@procurement.test",
+      "description": "PO lines held back from Lakeshore Industrial Inc.'s demo data. Upload as \"Purchase Orders\" while signed in as demo.us@procurement.test."
+    },
+    {
+      "file": "jp-purchase-orders-2024-Q4.csv",
+      "title": "Japan: purchase orders Oct–Dec 2024",
+      "format": "CSV",
+      "source": "purchase_orders",
+      "rows": 30,
+      "currency": "JPY",
+      "login": "demo.jp@procurement.test",
+      "description": "PO lines held back from Sakura Precision K.K.'s demo data. Upload as \"Purchase Orders\" while signed in as demo.jp@procurement.test."
+    },
+    {
+      "file": "au-purchase-orders-2024-Q4.csv",
+      "title": "Australia: purchase orders Oct–Dec 2024",
+      "format": "CSV",
+      "source": "purchase_orders",
+      "rows": 28,
+      "currency": "AUD",
+      "login": "demo.au@procurement.test",
+      "description": "PO lines held back from Southern Cross Fabrication Pty Ltd's demo data. Upload as \"Purchase Orders\" while signed in as demo.au@procurement.test."
+    },
+    {
+      "file": "examples/tally-purchases.xml",
+      "title": "Tally XML export (purchase and payment vouchers)",
+      "format": "XML",
+      "source": "tally",
+      "description": "Small hand-made file showing another supported source format (amounts in INR)."
+    },
+    {
+      "file": "examples/bank-statement.csv",
+      "title": "Bank statement (debits become supplier payments)",
+      "format": "CSV",
+      "source": "bank_statement",
+      "description": "Small hand-made file showing another supported source format (amounts in INR)."
+    },
+    {
+      "file": "examples/shopify-orders.csv",
+      "title": "Shopify orders export",
+      "format": "CSV",
+      "source": "shopify",
+      "description": "Small hand-made file showing another supported source format (amounts in INR)."
+    },
+    {
+      "file": "examples/price-sheet.csv",
+      "title": "Supplier price list (includes one deliberately broken row)",
+      "format": "CSV",
+      "source": "price_sheet",
+      "description": "Small hand-made file showing another supported source format (amounts in INR)."
+    }
+  ]
+}

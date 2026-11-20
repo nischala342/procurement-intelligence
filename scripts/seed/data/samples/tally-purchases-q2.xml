@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDATA>
+        <TALLYMESSAGE>
+          <VOUCHER VCHTYPE="Purchase" ACTION="Create">
+            <DATE>20250506</DATE>
+            <VOUCHERNUMBER>PUR-003</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>Acme Pvt. Ltd.</PARTYLEDGERNAME>
+            <PARTYGSTIN>27AAACA1234A1Z5</PARTYGSTIN>
+            <ALLINVENTORYENTRIES.LIST>
+              <STOCKITEMNAME>Steel Rod 12mm</STOCKITEMNAME>
+              <RATE>74.00/Kgs</RATE>
+              <BILLEDQTY>200 Kgs</BILLEDQTY>
+              <AMOUNT>-14800.00</AMOUNT>
+            </ALLINVENTORYENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE>
+          <VOUCHER VCHTYPE="Purchase" ACTION="Create">
+            <DATE>20250604</DATE>
+            <VOUCHERNUMBER>PUR-004</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>ACME Private Limited</PARTYLEDGERNAME>
+            <PARTYGSTIN>27AAACA1234A1Z5</PARTYGSTIN>
+            <ALLINVENTORYENTRIES.LIST>
+              <STOCKITEMNAME>Steel Rod 12mm</STOCKITEMNAME>
+              <RATE>75.50/Kgs</RATE>
+              <BILLEDQTY>250 Kgs</BILLEDQTY>
+              <AMOUNT>-18875.00</AMOUNT>
+            </ALLINVENTORYENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE>
+          <VOUCHER VCHTYPE="Payment" ACTION="Create">
+            <DATE>20250526</DATE>
+            <VOUCHERNUMBER>PAY-002</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>Acme Private Limited</PARTYLEDGERNAME>
+            <NARRATION>Against PUR-003</NARRATION>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Acme Private Limited</LEDGERNAME>
+              <ISPARTYLEDGER>Yes</ISPARTYLEDGER>
+              <AMOUNT>14800.00</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>

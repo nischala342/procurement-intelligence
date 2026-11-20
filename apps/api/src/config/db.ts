@@ -1,6 +1,7 @@
 import mongoose, { type Model } from 'mongoose';
 import { TenantModel, UserModel } from '../modules/auth/model';
 import { IngestionJobModel, RawRecordModel } from '../modules/ingestion/model';
+import { AdvisoryRunModel, BenchmarkModel, InsightModel } from '../modules/advisory/model';
 import { ProductModel } from '../modules/products/model';
 import { TransactionModel } from '../modules/transactions/model';
 import { VendorModel } from '../modules/vendors/model';
@@ -20,7 +21,7 @@ export async function connectDb(): Promise<typeof mongoose> {
   if (!env.isProd) {
     // Dev/test: make indexes match the schemas, dropping stale ones. This matters after the tenant migration,
     // which replaced global unique indexes (e.g. vendor normalizedName) with per-tenant compound ones.
-    await Promise.all([VendorModel, ProductModel, TransactionModel, IngestionJobModel, RawRecordModel, UserModel, TenantModel].map(syncIndexes));
+    await Promise.all([VendorModel, ProductModel, TransactionModel, IngestionJobModel, RawRecordModel, UserModel, TenantModel, InsightModel, AdvisoryRunModel, BenchmarkModel].map(syncIndexes));
   }
   return conn;
 }

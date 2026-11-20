@@ -9,6 +9,8 @@ import { logger } from './config/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
 import { healthRouter } from './modules/health/routes';
+import { advisoryRouter } from './modules/advisory/routes';
+import { analyticsRouter } from './modules/analytics/routes';
 import { authRouter } from './modules/auth/routes';
 import { requireAuth } from './modules/auth/guard';
 import { ingestionRouter } from './modules/ingestion/routes';
@@ -43,6 +45,8 @@ export function createApp(): Express {
   v1.use('/auth', authRouter);
   // Everything below handles tenant data: a valid session is mandatory and every query is tenant-scoped.
   v1.use('/ingestion', requireAuth, ingestionRouter);
+  v1.use('/advisory', requireAuth, advisoryRouter);
+  v1.use('/analytics', requireAuth, analyticsRouter);
   v1.use('/vendors', requireAuth, vendorsRouter);
   v1.use('/products', requireAuth, productsRouter);
   v1.use('/transactions', requireAuth, transactionsRouter);

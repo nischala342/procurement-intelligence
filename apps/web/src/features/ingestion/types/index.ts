@@ -1,4 +1,4 @@
-export type SourceType = 'price_sheet' | 'tally' | 'shopify' | 'bank_statement' | 'pdf_invoice';
+export type SourceType = 'purchase_orders' | 'price_sheet' | 'tally' | 'shopify' | 'bank_statement' | 'pdf_invoice';
 export type ApiJobStatus = 'processing' | 'completed' | 'completed_with_errors' | 'failed';
 /** UI pipeline status derived from the API job status + pending review count (see `pipelineStatus`). */
 export type PipelineStatus = 'PENDING' | 'PARSING' | 'NEEDS_REVIEW' | 'PROCESSED' | 'FAILED';
@@ -68,7 +68,8 @@ export interface Product {
   sku?: string;
   aliases: string[];
   baseUnit: string;
-  dimension: 'count' | 'mass' | 'volume' | 'length';
+  dimension: 'count' | 'mass' | 'volume' | 'length' | 'area' | 'time' | 'data' | 'service';
+  category?: string | null;
   status: EntityStatus;
   possibleDuplicateOf?: string;
   similarityScore?: number;

@@ -1,0 +1,16 @@
+**/node_modules
+**/dist
+**/.vite
+**/*.log
+**/*.tsbuildinfo
+.git
+.env
+.env.*
+!.env.example
+docker-compose.yml
+apps/api/tests
+apps/web/public/samples
+datasets/Procurement KPI Analysis Dataset.csv
+docs
+.claude
+*.md

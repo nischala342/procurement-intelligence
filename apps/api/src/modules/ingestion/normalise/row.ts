@@ -1,4 +1,4 @@
-import { detectCurrencyInText, getFxRate, normalizeCurrency } from '../../reference/currency';
+import { crossRate, detectCurrencyInText, normalizeCurrency } from '../../reference/currency';
 import { normalizeUnit } from '../../reference/units';
 import type { ParsedRow, RowKind } from '../parsers/types';
 import { parseDate } from './dates';
@@ -26,6 +26,8 @@ export type RowResult = { ok: true; value: NormalizedRow } | { ok: false; error:
 export interface NormalizeOptions {
   dayFirst: boolean;
   defaultCurrency: string;
+  /** the tenant's reporting currency; amounts already in it are kept exactly (rate 1) */
+  baseCurrency: string;
 }
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
@@ -94,7 +96,7 @@ export function normalizeRow(row: ParsedRow, opts: NormalizeOptions): RowResult 
   }
 
   // --- currency conversion to base
-  const fxRate = knownCurrency ? (getFxRate(currency) ?? undefined) : undefined;
+  const fxRate = knownCurrency ? (crossRate(currency, opts.baseCurrency) ?? undefined) : undefined;
   if (fxRate === undefined && knownCurrency) warnings.push(`NO_FX_RATE:${currency}`);
   const amountBase = fxRate !== undefined && amount !== undefined ? r4(amount * fxRate) : undefined;
   const unitPriceBase = fxRate !== undefined && unitPrice !== undefined && factor ? r4((unitPrice * fxRate) / factor) : undefined;

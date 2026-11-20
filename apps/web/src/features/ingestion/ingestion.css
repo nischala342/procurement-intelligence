@@ -31,10 +31,6 @@
 
 .issues { margin: 6px 0 0; padding-left: 20px; font-size: .84rem; }
 
-.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-top: 8px; }
-.tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 9px 14px; margin-bottom: -1px; font: inherit; color: var(--muted); cursor: pointer; }
-.tab:hover { color: var(--text); }
-.tab.active { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
 
 .review-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 14px; }
 .review-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
@@ -53,3 +49,20 @@
   .arrow { display: none; }
   .topbar { gap: 12px; padding: 0 12px; }
 }
+
+.samples { margin: 16px 0 4px; padding: 14px 16px; border-radius: 12px; background: #faf9ff; border: 1px dashed #cfc8ff; }
+.samples h3 { margin: 0 0 2px; font-size: .95rem; }
+.sample-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.sample-list li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+.sample-list li.mine { border-color: #c4b5fd; box-shadow: 0 0 0 2px #ede9fe; }
+.sample-list li > div:first-child { display: flex; flex-direction: column; min-width: 0; }
+.sample-actions { display: flex; gap: 6px; flex: none; }
+.sample-actions a.btn { text-decoration: none; }
+.sample-more { margin-top: 10px; font-size: .86rem; }
+.sample-more summary { cursor: pointer; color: var(--muted); }
+
+.market-pointers { margin: 16px 0 4px; padding: 14px 16px; border-radius: 12px; background: var(--surface); border: 1px dashed var(--border-strong); }
+.market-pointers h3 { margin: 0 0 2px; font-size: .95rem; }
+.pointer-grid { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.pointer-card { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: #fafafc; opacity: .92; }
+.pointer-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }

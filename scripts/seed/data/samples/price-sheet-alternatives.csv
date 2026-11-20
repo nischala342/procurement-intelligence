@@ -1,0 +1,8 @@
+Supplier,GSTIN,SKU,Item,UOM,Unit Price,Currency,Effective Date
+Bharat Steel Traders,29AABCB5678C1Z2,STL-001,Steel Rod 12mm,kg,68.40,INR,10/04/2025
+Bharat Steel Traders,29AABCB5678C1Z2,STL-001,Steel Rod 12mm,kg,69.90,INR,10/05/2025
+Bharat Steel Traders,29AABCB5678C1Z2,STL-001,Steel Rod 12mm,kg,71.20,INR,10/06/2025
+PackRight Industries,,PKG-010,Corrugated Box Large,pcs,44.50,INR,12/04/2025
+PackRight Industries,,PKG-010,Corrugated Box Large,pcs,44.90,INR,12/05/2025
+Hydro Lubricants Co,,OIL-200,Hydraulic Oil,L,298,INR,05/04/2025
+Hydro Lubricants Co,,OIL-200,Hydraulic Oil,L,3.60,USD,05/06/2025

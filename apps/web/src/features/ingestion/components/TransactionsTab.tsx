@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePagedQuery } from '../../../shared/hooks/usePagedQuery';
-import { formatDate, formatMoney, formatNumber } from '../../../shared/lib/format';
+import { formatDate, formatMoney, formatNumber, currencyCode } from '../../../shared/lib/format';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { Pill } from '../../../shared/ui/Pill';
@@ -68,7 +68,7 @@ export function TransactionsTab() {
                 Amount
               </th>
               <th scope="col" className="num">
-                Total (INR)
+                Total ({currencyCode()})
               </th>
             </tr>
           </thead>
@@ -99,7 +99,7 @@ export function TransactionsTab() {
                   </td>
                   <td className="num tnum">{t.quantity != null ? `${formatNumber(t.quantity)} ${t.unit ?? ''}` : '—'}</td>
                   <td className="num tnum">{formatMoney(t.amount ?? t.unitPrice, t.currency)}</td>
-                  <td className="num tnum">{formatMoney(t.amountBase, 'INR')}</td>
+                  <td className="num tnum">{formatMoney(t.amountBase)}</td>
                 </tr>
               ))
             )}

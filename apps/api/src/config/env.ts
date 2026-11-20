@@ -21,8 +21,19 @@ const schema = z.object({
     .string()
     .optional()
     .transform((v) => (v && v.trim() !== '' ? v : undefined)),
+  // Session cookie `Secure` flag. Default: on in production. Set false only when serving over plain HTTP (e.g. a local
+  // Docker stack on http://localhost); keep true behind HTTPS.
+  COOKIE_SECURE: z.enum(['true', 'false']).optional(),
   JWT_EXPIRES_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(50),
+  // Optional LLM narration of advisory insights. Without a key, grounded templates are used (no external calls).
+  ANTHROPIC_API_KEY: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== '' ? v.trim() : undefined)),
+  ADVISORY_MODEL: z.string().default('claude-haiku-5-5'),
+  ADVISORY_LLM_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(20_000),
+  ADVISORY_LLM_MAX_PER_RUN: z.coerce.number().int().min(0).max(100).default(15),
   API_KEY: z
     .string()
     .optional()
@@ -55,6 +66,7 @@ export const env = {
   jwtSecret: parsed.data.JWT_SECRET ?? 'dev-only-insecure-jwt-secret-do-not-use-in-production',
   corsOrigins: parsed.data.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean),
   isProd,
+  cookieSecure: parsed.data.COOKIE_SECURE ? parsed.data.COOKIE_SECURE === 'true' : isProd,
 };
 
 export type Env = typeof env;

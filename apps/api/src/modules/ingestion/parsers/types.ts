@@ -1,4 +1,4 @@
-export const SOURCE_TYPES = ['price_sheet', 'tally', 'shopify', 'bank_statement', 'pdf_invoice'] as const;
+export const SOURCE_TYPES = ['price_sheet', 'tally', 'shopify', 'bank_statement', 'purchase_orders', 'pdf_invoice'] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 
 export type RowKind = 'invoice_line' | 'price_quote' | 'payment' | 'sale';
@@ -20,6 +20,12 @@ export interface ParsedRow {
   date?: unknown;
   reference?: string;
   description?: string;
+  /** PO context: delivery dates, lead time, contract, compliance, budget (purchase-order exports) */
+  procurement?: Record<string, unknown>;
+  /** supplier master data seen on the line (tier, risk, ESG, country, payment terms...) */
+  vendorProfile?: Record<string, unknown>;
+  /** item master data (category) */
+  productProfile?: { category?: string; subCategory?: string };
 }
 
 export interface RowIssue {
@@ -46,5 +52,6 @@ export const ALLOWED_EXTENSIONS: Record<SourceType, string[]> = {
   tally: ['.xml'],
   shopify: ['.csv', '.json'],
   bank_statement: ['.csv', '.xlsx'],
+  purchase_orders: ['.csv', '.xlsx'],
   pdf_invoice: ['.pdf'],
 };

@@ -8,13 +8,13 @@ import * as service from './service';
 import { ACCESS_COOKIE, TOKEN_TTL_SECONDS, signAccessToken } from './tokens';
 
 // HttpOnly keeps the JWT away from page scripts; SameSite=Lax blocks cross-site POSTs (CSRF) while
-// allowing normal navigation. `secure` is enabled in production (HTTPS only).
-const cookieOptions: CookieOptions = { httpOnly: true, sameSite: 'lax', secure: env.isProd, path: '/' };
+// allowing normal navigation. `secure` follows COOKIE_SECURE (default: on in production, HTTPS only).
+const cookieOptions: CookieOptions = { httpOnly: true, sameSite: 'lax', secure: env.cookieSecure, path: '/' };
 
 type UserDoc = { _id: unknown; createdAt?: Date } & Pick<UserAttrs, 'email' | 'organizationName' | 'tenantId'>;
 
-const toSession = (u: UserDoc) => ({
-  user: { id: String(u._id), email: u.email, organizationName: u.organizationName, tenantId: String(u.tenantId), createdAt: u.createdAt },
+const toSession = async (u: UserDoc) => ({
+  user: { id: String(u._id), email: u.email, organizationName: u.organizationName, tenantId: String(u.tenantId), createdAt: u.createdAt, ...(await service.tenantProfile(u.tenantId)) },
 });
 
 function startSession(res: Response, user: UserDoc) {
@@ -25,13 +25,13 @@ function startSession(res: Response, user: UserDoc) {
 export async function signup(req: Request, res: Response) {
   const user = await service.signup(req.body as SignupInput);
   startSession(res, user); // a new account is signed in immediately
-  return sendSuccess(res, toSession(user), undefined, 201);
+  return sendSuccess(res, await toSession(user), undefined, 201);
 }
 
 export async function login(req: Request, res: Response) {
   const user = await service.login(req.body as LoginInput);
   startSession(res, user);
-  return sendSuccess(res, toSession(user));
+  return sendSuccess(res, await toSession(user));
 }
 
 export async function logout(_req: Request, res: Response) {
@@ -40,5 +40,5 @@ export async function logout(_req: Request, res: Response) {
 }
 
 export async function me(req: Request, res: Response) {
-  return sendSuccess(res, toSession(await service.getUser(currentUser(req).userId)));
+  return sendSuccess(res, await toSession(await service.getUser(currentUser(req).userId)));
 }

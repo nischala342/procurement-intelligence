@@ -1,4 +1,7 @@
-export const BASE_CURRENCY = 'INR';
+/** Default reporting currency for new organizations. Each tenant can set its own (Tenant.baseCurrency). */
+export const DEFAULT_BASE_CURRENCY = 'INR';
+/** @deprecated use the tenant's base currency; kept for the reference endpoint */
+export const BASE_CURRENCY = DEFAULT_BASE_CURRENCY;
 
 /**
  * Static reference rates: 1 unit of currency = N INR.
@@ -44,5 +47,18 @@ export function detectCurrencyInText(text: unknown): string | null {
 }
 
 export const getFxRate = (currency: string): number | null => FX_TO_INR[currency] ?? null;
+
+export const SUPPORTED_CURRENCIES = Object.keys(FX_TO_INR);
+
+/**
+ * Units of `to` per 1 unit of `from`, via the INR reference table. Identical currencies always convert at exactly 1,
+ * so amounts already in the tenant's currency are never altered. Null if either currency is unknown.
+ */
+export function crossRate(from: string, to: string): number | null {
+  if (from === to) return 1;
+  const a = FX_TO_INR[from];
+  const b = FX_TO_INR[to];
+  return a !== undefined && b !== undefined ? a / b : null;
+}
 
 export const listCurrencies = () => ({ baseCurrency: BASE_CURRENCY, ratesToBase: FX_TO_INR });

@@ -1,14 +1,20 @@
-# CLAUDE.md — Procurement Intelligence
+# CLAUDE.md — quoteScout.info (procurement intelligence)
 
 Persistent rules for AI agents working in this repository. They apply automatically in every session.
 
 ## Project snapshot
-- Monorepo (npm workspaces): `apps/api` (Express + TypeScript + Mongoose), `apps/web` (React + Vite + TypeScript), `scripts/seed` (deterministic seeding), `docs/`.
+- Monorepo (npm workspaces): `apps/api` (Express + TypeScript + Mongoose), `apps/web` (React + Vite + TypeScript), `scripts/seed` (deterministic seeding), `docs/` (living docs; original feature briefs in `docs/specs/`, never in the repo root).
 - API layering is strict: `Routes -> Zod validation middleware -> Controller -> Service -> Mongoose Model`. No business logic in controllers, no DB queries in routes.
 - Every API response uses the envelope `{ success, data?, error?: { code, message, details? }, meta? }` (see `apps/api/src/utils/response.ts`).
 - Frontend dependency flow is one-way: `shared -> features -> pages`. Features never import from pages or from other features' internals.
 - Auth: HTTP-only `accessToken` cookie (JWT). Tenant data (`ingestion`, `vendors`, `products`, `transactions`) is tenant-scoped: controllers pass `tenantOf(req)` to services, and **every** query on a tenant model must filter by `tenantId`. Never take `tenantId` from request input. Cross-tenant ids must 404.
-- Env vars live in the root `.env` (template: `.env.example`).
+- Vendor analytics live in `modules/vendors/intelligence.service.ts` (aggregations) and `intelligence.math.ts` (pure, unit-tested). Money is INR (`amountBase`), prices are INR per base unit (`unitPriceBase`). Never fabricate data the sources do not contain (e.g. lead times): return `null` and say so.
+- Product economics live in `modules/products/intelligence.service.ts` / `intelligence.math.ts`: purchases (`invoice_line`) are what was paid, quotes (`price_quote`) what was offered. Reliability, consumption and stock are explicit proxies/estimates; lead time is configurable and flagged when defaulted.
+- Each tenant has a `baseCurrency` (`auth/tenantSettings.ts`); money (`amountBase`, `unitPriceBase`, insight impacts) is in it, rate exactly 1 when the source is already in it. Never convert the dataset's amounts.
+- Advisory (`modules/advisory`): numbers come only from deterministic detectors (`signals.math.ts`, `signals.sourcing.ts`, `stats.ts`); LLM text must pass the grounding guard. Noisy prices need significance tests, not single-price comparisons.
+- Analytics overview (`modules/analytics`): KPIs from fields present on lines only; absent → `null`.
+- Frontend server state for vendor/product/advisory/overview analytics uses React Query; the cache is cleared on tenant change and invalidated after uploads/scans. Brand: quoteScout (animated `shared/ui/Logo.tsx`); demo logins + samples on the sign-in page (`VITE_DEMO_MODE`).
+- Env vars live in the root `.env` (template: `.env.example`). Docker: `docker-compose.yml` uses profiles (default mongo only; `app`, `seed`, `tools`) with Dockerfiles in `docker/`; update them whenever an env var or build step changes.
 - Common commands: `npm run db:up`, `npm run db:seed`, `npm run dev`, `npm run test:api`, `npm run typecheck`.
 
 ## CRITICAL WORKFLOW RULE — Prompt reframing & living docs

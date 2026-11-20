@@ -2,7 +2,7 @@ import { InferSchemaType, Schema, model, models, type Model } from 'mongoose';
 import { jsonOptions } from '../../utils/mongooseJson';
 
 export const TRANSACTION_KINDS = ['invoice_line', 'price_quote', 'payment', 'sale'] as const;
-export const SOURCE_TYPE_VALUES = ['price_sheet', 'tally', 'shopify', 'bank_statement', 'pdf_invoice'] as const;
+export const SOURCE_TYPE_VALUES = ['price_sheet', 'tally', 'shopify', 'bank_statement', 'purchase_orders', 'pdf_invoice'] as const;
 
 const transactionSchema = new Schema(
   {
@@ -21,7 +21,7 @@ const transactionSchema = new Schema(
     unit: { type: String },
     baseQuantity: { type: Number },
     baseUnit: { type: String },
-    // money as reported, and converted to the base currency (INR)
+    // money as reported, and in the tenant's base currency (unchanged when already in it)
     unitPrice: { type: Number },
     amount: { type: Number },
     currency: { type: String },
@@ -29,6 +29,39 @@ const transactionSchema = new Schema(
     amountBase: { type: Number },
     unitPriceBase: { type: Number }, // base-currency price per base unit
     warnings: { type: [String], default: [] },
+    /** purchase-order context (present for PO exports): delivery performance, contract and compliance, budget */
+    procurement: {
+      type: new Schema(
+        {
+          poType: String,
+          poStatus: String,
+          requestedDelivery: Date,
+          actualDelivery: Date,
+          daysLate: Number,
+          onTime: Boolean,
+          leadTimeDays: Number,
+          budgetUnitPrice: Number,
+          budgetUnitPriceBase: Number,
+          discountPct: Number,
+          taxPct: Number,
+          taxAmount: Number,
+          grossAmount: Number,
+          contractId: String,
+          contractType: String,
+          maverick: Boolean,
+          singleSource: Boolean,
+          preferredSupplier: Boolean,
+          invoiceStatus: String,
+          paymentStatus: String,
+          invoiceMatch: String,
+          department: String,
+          costCentre: String,
+          sourcing: String,
+        },
+        { _id: false },
+      ),
+      default: undefined,
+    },
     fingerprint: { type: String, required: true }, // idempotency key (unique per tenant)
   },
   { timestamps: true, versionKey: false, toJSON: jsonOptions(['fingerprint', 'tenantId']) },

@@ -12,11 +12,16 @@ const productSchema = new Schema(
     aliases: { type: [String], default: [] },
     aliasKeys: { type: [String], default: [] },
     baseUnit: { type: String, required: true, default: 'pcs' }, // canonical base unit of its dimension
-    dimension: { type: String, enum: ['count', 'mass', 'volume', 'length'], default: 'count' },
+    dimension: { type: String, enum: ['count', 'mass', 'volume', 'length', 'area', 'time', 'data', 'service'], default: 'count' },
+    category: { type: String, trim: true },
+    subCategory: { type: String, trim: true },
     status: { type: String, enum: PRODUCT_STATUSES, default: 'active' },
     possibleDuplicateOf: { type: Schema.Types.ObjectId, ref: 'Product' },
     similarityScore: { type: Number },
     mergedInto: { type: Schema.Types.ObjectId, ref: 'Product' },
+    // user-configured reorder inputs (lead times are not available from the ingested sources)
+    leadTimeDays: { type: Number, min: 0, max: 365 },
+    safetyStockDays: { type: Number, min: 0, max: 365 },
   },
   { timestamps: true, versionKey: false, toJSON: jsonOptions(['aliasKeys', 'tenantId']) },
 );
@@ -25,6 +30,7 @@ const productSchema = new Schema(
 productSchema.index({ tenantId: 1, normalizedName: 1 }, { unique: true });
 productSchema.index({ tenantId: 1, sku: 1 }, { sparse: true });
 productSchema.index({ tenantId: 1, status: 1 });
+productSchema.index({ tenantId: 1, category: 1 });
 productSchema.index({ tenantId: 1, aliasKeys: 1 });
 
 export type ProductAttrs = InferSchemaType<typeof productSchema>;

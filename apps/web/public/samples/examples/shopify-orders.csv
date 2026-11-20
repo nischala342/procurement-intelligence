@@ -1,0 +1,4 @@
+Name,Created at,Currency,Lineitem quantity,Lineitem name,Lineitem price,Lineitem sku,Vendor
+#1001,2025-04-02 10:15:00 +0530,INR,2,Steel Rod 12mm,950.00,STL-001,Acme Pvt. Ltd.
+,,,1,Corrugated Box Large,60.00,PKG-010,Globex Corp
+#1002,2025-04-03 16:40:00 +0530,USD,3,Hydraulic Oil 1L,5.50,OIL-200,Initech L.L.C.
